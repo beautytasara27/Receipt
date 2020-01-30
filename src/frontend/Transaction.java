@@ -21,8 +21,9 @@ import receipt.Items;
  * @author beauty
  */
 public class Transaction extends javax.swing.JFrame {
-    public double total;
+    public static double total;
     public static int transactionid;
+    public static String method;
     ArrayList<String> MethodList= new ArrayList<>();
     ArrayList<Integer> methodidS = new ArrayList<>();
     /**
@@ -31,8 +32,9 @@ public class Transaction extends javax.swing.JFrame {
     public Transaction() throws ClassNotFoundException{
         initComponents();
         jTextArea1.setText("\n");
-        WriteTransaction();
         loadPaymentMethods();
+        getTotal();
+        WriteTransaction();
     }
 
     /**
@@ -72,8 +74,6 @@ public class Transaction extends javax.swing.JFrame {
         jButton2.setText("Back");
 
         jLabel2.setText("Your Cart Items");
-
-        paymentM.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
         jLabel3.setText("Payment Method");
 
@@ -133,7 +133,10 @@ public class Transaction extends javax.swing.JFrame {
 
     private void jButton1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1MouseClicked
         // TODO add your handling code here:
-        //inser
+        saveTransaction();
+        Receipt rec = new Receipt();
+        this.setVisible(false);
+        rec.setVisible(true);
     }//GEN-LAST:event_jButton1MouseClicked
     public void WriteTransaction() throws ClassNotFoundException{
         ArrayList<Items> list = transItems();
@@ -142,9 +145,9 @@ public class Transaction extends javax.swing.JFrame {
         }
         TotalDue.setText(String.valueOf(total));
     }
-    public ArrayList<Items> transItems(){
+    public static ArrayList<Items> transItems(){
         try {
-            String sql = "select *,sum(price_by_Qty) as total from bill_items inner join item on bill_items.FK_itemId=item.itemId where bill_items.FK_billNo="+billno ;
+            String sql = "select * from bill_items inner join item on bill_items.FK_itemId=item.itemId where bill_items.FK_billNo="+billno ;
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             ArrayList<Items> ItemList= new ArrayList<>();
@@ -153,7 +156,7 @@ public class Transaction extends javax.swing.JFrame {
                 String name = resultSet.getString("itemName");
                 double price = resultSet.getDouble("price");
                 int qnty = resultSet.getInt("quantity");
-                total = resultSet.getDouble("total");
+               // total = resultSet.getDouble("total");
                 Items item = new Items(name,id,price,qnty);
                 ItemList.add(item) ;
             }
@@ -164,6 +167,23 @@ public class Transaction extends javax.swing.JFrame {
             ex.printStackTrace();
         }
         return null;
+    }
+    public void getTotal(){
+        total = 0;
+        try {
+            String sql = "select sum(price_by_Qty) as total from bill_items where bill_items.FK_billNo="+billno+" group by FK_billNo";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                double price = resultSet.getDouble("total");
+                total = total + price;
+            }
+            return ;
+        } 
+        catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return ;
     }
     /**
      * @param args the command line arguments
@@ -238,9 +258,9 @@ private void loadPaymentMethods() {
         }
         return;
     }
-    public boolean saveTransaction( Items item) {
+    public boolean saveTransaction() {
         try {
-            String sql = "INSERT INTO transaction(transactionId,total,amount_paid,change,billNo,tax,paymentmethod) VALUES(?,?,?,?,?,?,?)";
+            String sql = "INSERT INTO transaction(transactionId,total_price,amount_paid,change_,FK_billNo,tax,FK_paymentMethodId) VALUES(?,?,?,?,?,?,?)";
             PreparedStatement pstmt = conn.prepareStatement(sql);
             transactionid = new Random().nextInt(10000);
             pstmt.setInt(1, transactionid);
@@ -250,7 +270,8 @@ private void loadPaymentMethods() {
             pstmt.setInt(5,billno);
             pstmt.setDouble(6, 0.10);
             int index=paymentM.getSelectedIndex();
-            pstmt.setInt(2, methodidS.get(index));      
+            method = (String) paymentM.getSelectedItem();
+            pstmt.setInt(7, methodidS.get(index));      
             int i = pstmt.executeUpdate();
             if (i == 1) {
                 return true;

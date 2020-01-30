@@ -7,11 +7,14 @@ package frontend;
 
 import static connect.connectoDB.conn;
 import static frontend.Shop.billno;
+import static frontend.Transaction.method;
+import static frontend.Transaction.transItems;
 import static frontend.Transaction.transactionid;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import receipt.Items;
 
 /**
  *
@@ -23,18 +26,23 @@ public class Receipt extends javax.swing.JFrame {
     public String city;
     public String branchName;
     public String phone;
-    public int transactionid;
+    public int transactionId;
     public double total;
     public double change;
     public double amontpaid;
     public int billno;
     public int paymentmethod;
     public double tax;
+    ArrayList<Items> MethodList1= new ArrayList<>();
     /**
      * Creates new form Receipt
      */
     public Receipt() {
         initComponents();
+        getTransDetails();
+        getBranchDetails();
+        MethodList1 = transItems();
+        writeItems();
     }
 
     /**
@@ -61,32 +69,55 @@ public class Receipt extends javax.swing.JFrame {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 321, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 347, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 395, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         close.setText("Close");
+        close.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                closeMouseClicked(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addComponent(close)
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(close)))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addComponent(close)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void closeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_closeMouseClicked
+        // TODO add your handling code here:
+        Welcome wel = new Welcome();
+        this.setVisible(false);
+        wel.setVisible(true);
+    }//GEN-LAST:event_closeMouseClicked
 
     /**
      * @param args the command line arguments
@@ -123,28 +154,41 @@ public class Receipt extends javax.swing.JFrame {
         });
     }
     public void writeItems(){
-        jTextArea1.setText("-------------------------------------");
+        jTextArea1.setText("----------------------------------------------------------\n");
         jTextArea1.append("The FoodHall"+ branchName+"\n");
         jTextArea1.append("Bill No:"+billno+"\n");
-        jTextArea1.append("-------------------------------------");
-        jTextArea1.append("-------------------------------------");
-        jTextArea1.append("-------------------------------------");
-        jTextArea1.append("-------------------------------------");
-        jTextArea1.append("-------------------------------------");
-        jTextArea1.append("-------------------------------------");
+        jTextArea1.append("-----------------------------------------------------------\n");
+        for (Items item1 : MethodList1){
+            jTextArea1.append(item1.getItemname()+"  X   "+item1.getQuantity()+"   Rp "+item1.getItemPrice()+"\n");
+        }
+        jTextArea1.append("-----------------------------------------------------------\n");
+        jTextArea1.append("-----------------------------------------------------------\n");
+        jTextArea1.append("Total DUE           "+(total+(0.10*total))+"\n");
+        jTextArea1.append("-----------------------------------------------------------\n");
+        jTextArea1.append("-----------------------------------------------------------\n");
+        jTextArea1.append("Sub Total           "+total+"\n");
+        jTextArea1.append("Tax(10%)        "+ (total*0.10)+"\n");
+        jTextArea1.append("-----------------------------------------------------------\n");
+        jTextArea1.append(method + "           "+(total+(0.10*total))+"\n");
+        jTextArea1.append("Change           "+change+"\n");
+        jTextArea1.append("-----------------------------------------------------------\n");
+        jTextArea1.append("SPECIAL OFFERS ONLY FOR CARDHOLDERS\n");
+        jTextArea1.append("            "+street+" \n");
+        jTextArea1.append("            "+phone+" \n");
+        jTextArea1.append("-----------------------------------------------------------\n");
+        
+        
         
     }
     public void getBranchDetails(){
         try {
-            String sql = "select * from branch where branchName='Senayan'" ;
+            String sql = "select * from branch where branchName='Senayan City'" ;
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 branchName = resultSet.getString("branchName");
-                street = resultSet.getString("street");
-                areacode = resultSet.getString("areacode");
-                city =resultSet.getString("areacode");
-                phone = resultSet.getString("areacode");
+                street = resultSet.getString("address");
+                phone = resultSet.getString("branchPhoneNum");
             }
             
             return;
@@ -157,15 +201,16 @@ public class Receipt extends javax.swing.JFrame {
     }
     public void getTransDetails(){
         try {
-            String sql = "select * from transaction where transactionid="+transactionid ;
+            String sql = "select * from transaction where transactionId="+transactionid ;
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                branchName = resultSet.getString("branchName");
-                street = resultSet.getString("street");
-                areacode = resultSet.getString("areacode");
-                city =resultSet.getString("areacode");
-                phone = resultSet.getString("areacode");
+                total = resultSet.getDouble("total_price");
+                amontpaid = resultSet.getDouble("amount_paid");
+                billno = resultSet.getInt("FK_billNo");
+                paymentmethod =resultSet.getInt("FK_paymentMethodId");
+                tax =resultSet.getDouble("tax");
+                change =resultSet.getDouble("change_");
             }
             
             return;
